@@ -81,3 +81,16 @@ void print_control_value(struct monitor* mon, unsigned char ctrl, unsigned short
 	}
 }
 
+void print_monlist(struct monitorlist *monlist) {
+	struct monitorlist *current;
+		
+	current = monlist;
+	while (current != NULL)
+	{
+		printf(_(" - Device: %s\n"), current->filename);
+		printf(_("   DDC/CI supported: %s\n"), current->supported ? _("Yes") : _("No"));
+		printf(_("   Monitor Name: %s\n"), current->name);
+		printf(_("   Input type: %s\n"), current->digital ? _("Digital") : _("Analog"));
+		current = current->next;
+	}
+}

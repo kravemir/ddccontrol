@@ -54,35 +54,24 @@ int perform_using_dbus(char *fn, int dump, int caps, int probe, int ctrl, int va
 		return -1;
 
 	if (probe) {
-		fn = NULL;
+		struct monitorlist *monlist = ddcci_dbus_rescan_monitors(proxy);
+		print_monlist(monlist);
 
-		struct monitorlist *monlist, *current;
-		
-		monlist = ddcci_dbus_rescan_monitors(proxy);
-		current = monlist;
-		while (current != NULL)
-		{
-			printf(_(" - Device: %s\n"), current->filename);
-			printf(_("   DDC/CI supported: %s\n"), current->supported ? _("Yes") : _("No"));
-			printf(_("   Monitor Name: %s\n"), current->name);
-			printf(_("   Input type: %s\n"), current->digital ? _("Digital") : _("Analog"));
-			
-			if ((!fn) && (current->supported))
-			{
-				printf(_("   (Automatically selected)\n"));
+		fn = NULL;
+		for(struct monitorlist *current = monlist; current != NULL; current = current->next) {
+			if (current->supported) {
+				printf(_("\nAutomatically selected: %s\n"), current->filename);
 				fn = malloc(strlen(current->filename)+1);
 				strcpy(fn, current->filename);
+				break;
 			}
-			
-			current = current->next;
 		}
-
+		
 		if (fn == NULL) {
 			fprintf(stderr, _(
 				"No monitor supporting DDC/CI available.\n"
 				"If your graphics card need it, please check all the required kernel modules are loaded (i2c-dev, and your framebuffer driver).\n"
-				));
-			ddcci_release();
+			));
 			exit(0);
 		}
 	}
