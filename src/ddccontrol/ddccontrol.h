@@ -24,6 +24,7 @@
 
 int perform_using_dbus(char *fn, int dump, int caps, int probe, int ctrl, int value, int force);
 
+void print_monlist(struct monitorlist *monlist);
 void print_control_value(struct monitor* mon, unsigned char ctrl, unsigned short value, unsigned short maximum, int result);
 
 #endif // DDCCONTROL_H
