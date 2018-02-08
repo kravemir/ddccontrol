@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void dumpctrl(DDCControl *proxy, char *fn, struct monitor* mon, unsigned char ctrl, int force)
+static void dumpctrl(struct monitor* mon, unsigned char ctrl, int force)
 {
 	unsigned short value, maximum;
 	int result = ddcci_readctrl(mon, ctrl, &value, &maximum);
@@ -88,14 +88,14 @@ int perform_using_dbus(char *fn, int dump, int caps, int probe, int ctrl, int va
 				printf(_("Write failed\n."));
 			}
 		}
-		dumpctrl(proxy, fn, mon, ctrl, 1);
+		dumpctrl(mon, ctrl, 1);
 	}
 
 	if (dump) {
 		fprintf(stdout, _("\nControls (valid/current/max) [Description - Value name]:\n"));
 
 		for (i = 0; i < 256; i++) {
-			dumpctrl(proxy, fn, mon, i, force);
+			dumpctrl(mon, i, force);
 		}
 	}
 	return 0;
