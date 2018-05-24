@@ -33,6 +33,9 @@
 #define DC_BUS_ERROR_OPEN_FAILED        "ddccontrol.DDCControl.Error.OpenFailed"
 #define DC_BUS_ERROR_INVALID_DEVICE     "ddccontrol.DDCControl.Error.InvalidDevice"
 
+static GMainLoop *loop;
+static DDCControl *skeleton = NULL;
+
 static struct monitorlist* monlist = NULL;
 
 static int devices_count = 0;
@@ -292,8 +295,6 @@ static gboolean handle_set_control(DDCControl *skeleton, GDBusMethodInvocation *
 }
 
 static void on_name_acquired(GDBusConnection *connection, const gchar *name, gpointer user_data) {
-    DDCControl *skeleton;
-
     skeleton = ddccontrol_skeleton_new();
     g_signal_connect(skeleton, "handle-get-monitors", G_CALLBACK(handle_get_monitors), NULL);
     g_signal_connect(skeleton, "handle-rescan-monitors", G_CALLBACK(handle_rescan_monitors), NULL);
@@ -347,8 +348,12 @@ int check_or_load_i2c_dev() {
     return TRUE;
 }
 
+static gboolean on_term(gpointer user_data) {
+    g_main_loop_quit(loop);
+    return FALSE;
+}
+
 int main(void) {
-    GMainLoop *loop;
 
     if(check_or_load_i2c_dev() == FALSE) {
         fprintf(stderr, _("Kernel module i2c_dev isn't available, functionality might be limited, or unavailable...\n"));
@@ -361,11 +366,25 @@ int main(void) {
 
     loop = g_main_loop_new(NULL, FALSE);
 
-    g_bus_own_name(G_BUS_TYPE_SYSTEM, "ddccontrol.DDCControl", G_BUS_NAME_OWNER_FLAGS_NONE,
+    guint owner_id = g_bus_own_name(G_BUS_TYPE_SYSTEM, "ddccontrol.DDCControl", G_BUS_NAME_OWNER_FLAGS_NONE,
                    NULL, on_name_acquired, on_name_lost,
                    NULL, NULL);
 
+    g_unix_signal_add(SIGTERM, on_term, NULL);
+    g_unix_signal_add(SIGINT, on_term, NULL);
+
+    printf ("\n\nRUN_MAIN_LOOP\n\n");
     g_main_loop_run(loop);
+
+    printf ("\n\nSTOP_MAIN_LOOP\n\n");
+    g_bus_unown_name(owner_id);
+    g_main_loop_unref(loop);
+    loop = NULL;
+
+    if(skeleton != NULL) {
+        g_object_unref(skeleton);
+        skeleton = NULL;
+    }
 
     if(devices != NULL)
         ddcci_free_list(monlist);

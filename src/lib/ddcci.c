@@ -1071,10 +1071,9 @@ int ddcci_save(struct monitor* mon)
 int ddcci_close(struct monitor* mon)
 {
 	// TODO: closing and freeing are different operations, split the function!
-
-	if(mon->__vtable) {
-		return mon->__vtable->close(mon);
-	}
+    
+    free(mon->caps.raw_caps);
+    mon->caps.raw_caps = 0;
 
 	if (mon->db)
 	{
@@ -1106,6 +1105,10 @@ int ddcci_close(struct monitor* mon)
 	
 	if (mon->profiles) {
 		ddcci_free_profile(mon->profiles);
+	}
+
+	if(mon->__vtable) {
+		return mon->__vtable->close(mon);
 	}
 	
 	if ((mon->fd > -1) && (close(mon->fd) < 0)) {
